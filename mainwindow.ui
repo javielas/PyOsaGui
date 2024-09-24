@@ -210,14 +210,35 @@
         <item>
          <layout class="QVBoxLayout" name="verticalLayout">
           <item>
-           <widget class="QLabel" name="label">
-            <property name="text">
-             <string>Visible</string>
-            </property>
-           </widget>
+           <layout class="QHBoxLayout" name="horizontalLayout_7">
+            <item>
+             <widget class="QLabel" name="label">
+              <property name="text">
+               <string>Visible</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="NewGroupPushButton">
+              <property name="text">
+               <string>New Group</string>
+              </property>
+              <property name="icon">
+               <iconset>
+                <normaloff>Icons/addition-color-icon.png</normaloff>Icons/addition-color-icon.png</iconset>
+              </property>
+              <property name="iconSize">
+               <size>
+                <width>24</width>
+                <height>24</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </item>
           <item>
-           <widget class="QListView" name="listView">
+           <widget class="QTreeView" name="treeView">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
               <horstretch>0</horstretch>

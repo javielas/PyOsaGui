@@ -16,9 +16,9 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QComboBox, QDoubleSpinBox, QHBoxLayout,
-    QLabel, QLayout, QListView, QMainWindow,
+    QHeaderView, QLabel, QLayout, QMainWindow,
     QMenuBar, QPushButton, QSizePolicy, QSpinBox,
-    QStatusBar, QVBoxLayout, QWidget)
+    QStatusBar, QTreeView, QVBoxLayout, QWidget)
 
 from pyqtgraph import PlotWidget
 
@@ -152,37 +152,51 @@ class Ui_MainWindow(object):
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
         self.verticalLayout = QVBoxLayout()
         self.verticalLayout.setObjectName(u"verticalLayout")
+        self.horizontalLayout_7 = QHBoxLayout()
+        self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
         self.label = QLabel(self.centralwidget)
         self.label.setObjectName(u"label")
 
-        self.verticalLayout.addWidget(self.label)
+        self.horizontalLayout_7.addWidget(self.label)
 
-        self.listView = QListView(self.centralwidget)
-        self.listView.setObjectName(u"listView")
+        self.NewGroupPushButton = QPushButton(self.centralwidget)
+        self.NewGroupPushButton.setObjectName(u"NewGroupPushButton")
+        icon1 = QIcon()
+        icon1.addFile(u"Icons/addition-color-icon.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.NewGroupPushButton.setIcon(icon1)
+        self.NewGroupPushButton.setIconSize(QSize(24, 24))
+
+        self.horizontalLayout_7.addWidget(self.NewGroupPushButton)
+
+
+        self.verticalLayout.addLayout(self.horizontalLayout_7)
+
+        self.treeView = QTreeView(self.centralwidget)
+        self.treeView.setObjectName(u"treeView")
         sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         sizePolicy1.setHorizontalStretch(0)
         sizePolicy1.setVerticalStretch(0)
-        sizePolicy1.setHeightForWidth(self.listView.sizePolicy().hasHeightForWidth())
-        self.listView.setSizePolicy(sizePolicy1)
+        sizePolicy1.setHeightForWidth(self.treeView.sizePolicy().hasHeightForWidth())
+        self.treeView.setSizePolicy(sizePolicy1)
 
-        self.verticalLayout.addWidget(self.listView)
+        self.verticalLayout.addWidget(self.treeView)
 
         self.horizontalLayout_6 = QHBoxLayout()
         self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
         self.DeletePushButton = QPushButton(self.centralwidget)
         self.DeletePushButton.setObjectName(u"DeletePushButton")
-        icon1 = QIcon()
-        icon1.addFile(u"Icons/delete-icon.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.DeletePushButton.setIcon(icon1)
+        icon2 = QIcon()
+        icon2.addFile(u"Icons/delete-icon.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.DeletePushButton.setIcon(icon2)
         self.DeletePushButton.setIconSize(QSize(32, 32))
 
         self.horizontalLayout_6.addWidget(self.DeletePushButton)
 
         self.SavePushButton = QPushButton(self.centralwidget)
         self.SavePushButton.setObjectName(u"SavePushButton")
-        icon2 = QIcon()
-        icon2.addFile(u"Icons/icons8-save-96.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.SavePushButton.setIcon(icon2)
+        icon3 = QIcon()
+        icon3.addFile(u"Icons/icons8-save-96.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.SavePushButton.setIcon(icon3)
         self.SavePushButton.setIconSize(QSize(32, 32))
 
         self.horizontalLayout_6.addWidget(self.SavePushButton)
@@ -237,6 +251,7 @@ class Ui_MainWindow(object):
         self.PointsNmlabel.setText(QCoreApplication.translate("MainWindow", u"Points/nm", None))
         self.SweepPushButton.setText(QCoreApplication.translate("MainWindow", u"Sweep", None))
         self.label.setText(QCoreApplication.translate("MainWindow", u"Visible", None))
+        self.NewGroupPushButton.setText(QCoreApplication.translate("MainWindow", u"New Group", None))
         self.DeletePushButton.setText(QCoreApplication.translate("MainWindow", u"Delete", None))
         self.SavePushButton.setText(QCoreApplication.translate("MainWindow", u"Save checked", None))
     # retranslateUi
