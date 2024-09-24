@@ -8,9 +8,7 @@ import numpy as np
 import time, datetime
 import xarray as xr
 from pint import UnitRegistry
-import zipfile
-import tempfile
-import os
+
 
 
 
@@ -23,7 +21,7 @@ Q_ = ureg.Quantity
 offline_mode = True
 save_every_sweep = False
 
-if not offline_mode: import osa_driver
+if not offline_mode: import ando_driver as osa
 
 #Matplotlib default set of colors
 colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2',
@@ -346,8 +344,16 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         #Initialize values for comparison of parameters between sweep calls
         self.inputs = {'start': self.startWavlengthDoubleSpinBox, 'stop': self.stopWavelengthDoubleSpinBox, 
-                       'resolution': self.resoltuionNmDoubleSpinBox, 'reference':self.referenceLevelDoubleSpinBox, 
+                       'resolution': self.resoltuionNmDoubleSpinBox, 'ref_level':self.referenceLevelDoubleSpinBox, 
                        'sensitivity': self.sensitivityComboBox, 'trace_points': self.PointsNmspinBox}
+        
+        if not offline_mode:
+            osa.connect_to_osa()
+            self.startWavlengthDoubleSpinBox.setRange(osa.get_wavlength_range()[0], osa.get_wavlength_range()[1])
+            self.stopWavelengthDoubleSpinBox.setRange(osa.get_wavlength_range()[0], osa.get_wavlength_range()[1])
+            self.resoltuionNmDoubleSpinBox.setRange(osa.get_resolution_range()[0], osa.get_resolution_range()[1])
+            self.referenceLevelDoubleSpinBox.setRange(osa.get_ref_level_range()[0], osa.get_ref_level_range()[1])
+            self.sensitivityComboBox.addItems(list(self.sens_dict.keys()))
 
         #Create a starting group
         self.create_new_group()
@@ -392,7 +398,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         if offline_mode:
             worker_get_spectrum = Worker(self.get_fake_spectrum)
         else:
-            worker_get_spectrum = Worker(lambda: osa_driver.get_trace)
+            worker_get_spectrum = Worker(lambda: osa.get_trace)
         worker_get_spectrum.signals.result.connect(self.plotSpectrum)
         self.threadpool.start(worker_get_spectrum)
 
@@ -403,16 +409,18 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         current_group = self.model.root_item.child(self.model.root_item.child_count()-1)
         if current_group.child_count() == 0:
             #Update the parameters of the OSA
-            #self.update_osa_params(self.inputs)
             #Update the metadata of the group
+            start = self.startWavlengthDoubleSpinBox.value()
+            stop = self.stopWavelengthDoubleSpinBox.value()
             current_group.metadata = {
-                'start': self.startWavlengthDoubleSpinBox.value(),
-                'stop': self.stopWavelengthDoubleSpinBox.value(),
+                'start': start,
+                'stop': stop,
                 'resolution': self.resoltuionNmDoubleSpinBox.value(),
-                'reference': self.referenceLevelDoubleSpinBox.value(),
+                'ref_level': self.referenceLevelDoubleSpinBox.value(),
                 'sensitivity': self.sensitivityComboBox.currentText(),
-                'trace_points': self.PointsNmspinBox.value()
+                'trace_points': int(self.PointsNmspinBox.value()*(stop - start)),
             }
+            osa.update_params(current_group.metadata)
             
         #Get the previous color from the list or start with the first one
         if self.previous_color is None:
