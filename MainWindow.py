@@ -69,11 +69,6 @@ class Ui_MainWindow(object):
         self.horizontalLayout.addWidget(self.sensitivityLabel)
 
         self.sensitivityComboBox = QComboBox(self.centralwidget)
-        self.sensitivityComboBox.addItem("")
-        self.sensitivityComboBox.addItem("")
-        self.sensitivityComboBox.addItem("")
-        self.sensitivityComboBox.addItem("")
-        self.sensitivityComboBox.addItem("")
         self.sensitivityComboBox.setObjectName(u"sensitivityComboBox")
 
         self.horizontalLayout.addWidget(self.sensitivityComboBox)
@@ -240,12 +235,6 @@ class Ui_MainWindow(object):
         self.startWavlengthLabel.setText(QCoreApplication.translate("MainWindow", u"Start (nm)", None))
         self.stopWavelengthLabel.setText(QCoreApplication.translate("MainWindow", u"Stop (nm)", None))
         self.sensitivityLabel.setText(QCoreApplication.translate("MainWindow", u"Sensitivity", None))
-        self.sensitivityComboBox.setItemText(0, QCoreApplication.translate("MainWindow", u"Hold", None))
-        self.sensitivityComboBox.setItemText(1, QCoreApplication.translate("MainWindow", u"Auto", None))
-        self.sensitivityComboBox.setItemText(2, QCoreApplication.translate("MainWindow", u"High 1", None))
-        self.sensitivityComboBox.setItemText(3, QCoreApplication.translate("MainWindow", u"High 2", None))
-        self.sensitivityComboBox.setItemText(4, QCoreApplication.translate("MainWindow", u"High 3", None))
-
         self.referenceLevelLabel.setText(QCoreApplication.translate("MainWindow", u"Reference Level (dBm)", None))
         self.resoltuionNmLabel.setText(QCoreApplication.translate("MainWindow", u"Resoltuion (nm)", None))
         self.PointsNmlabel.setText(QCoreApplication.translate("MainWindow", u"Points/nm", None))

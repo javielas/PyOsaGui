@@ -8,9 +8,7 @@ import numpy as np
 import time, datetime
 import xarray as xr
 from pint import UnitRegistry
-
-
-
+import ando_driver as osa
 
 
 from MainWindow import Ui_MainWindow
@@ -21,7 +19,6 @@ Q_ = ureg.Quantity
 offline_mode = True
 save_every_sweep = False
 
-if not offline_mode: import ando_driver as osa
 
 #Matplotlib default set of colors
 colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2',
@@ -301,14 +298,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.treeView.setModel(self.model) # Assign to the treeView widget the model
         self.treeView.expandAll()
 
-        self.sens_dict = {
-            'Hold': 'SNHD',
-            'Auto': 'SNAT',
-            'High 1': 'SHI1',
-            'High 2': 'SHI2',
-            'High 3': 'SHI3'
-        }
-
         #Plot Attributes
         self.plotWidget.setBackground('w')
         styles = {"color": "k", "font-size": "25px"}
@@ -347,13 +336,14 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                        'resolution': self.resoltuionNmDoubleSpinBox, 'ref_level':self.referenceLevelDoubleSpinBox, 
                        'sensitivity': self.sensitivityComboBox, 'trace_points': self.PointsNmspinBox}
         
+
         if not offline_mode:
-            osa.connect_to_osa()
-            self.startWavlengthDoubleSpinBox.setRange(osa.get_wavlength_range()[0], osa.get_wavlength_range()[1])
-            self.stopWavelengthDoubleSpinBox.setRange(osa.get_wavlength_range()[0], osa.get_wavlength_range()[1])
-            self.resoltuionNmDoubleSpinBox.setRange(osa.get_resolution_range()[0], osa.get_resolution_range()[1])
-            self.referenceLevelDoubleSpinBox.setRange(osa.get_ref_level_range()[0], osa.get_ref_level_range()[1])
-            self.sensitivityComboBox.addItems(list(self.sens_dict.keys()))
+            self.andoOsa = osa.AndoOSA()
+            self.startWavlengthDoubleSpinBox.setRange(self.andoOsa.get_wavlength_range()[0], self.andoOsa.get_wavlength_range()[1])
+            self.stopWavelengthDoubleSpinBox.setRange(self.andoOsa.get_wavlength_range()[0], self.andoOsa.get_wavlength_range()[1])
+            self.resoltuionNmDoubleSpinBox.setRange(self.andoOsa.get_resolution_range()[0], self.andoOsa.get_resolution_range()[1])
+            self.referenceLevelDoubleSpinBox.setRange(self.andoOsa.get_ref_level_range()[0], self.andoOsa.get_ref_level_range()[1])
+            self.sensitivityComboBox.addItems(list(self.andoOsa.sens_dict.keys()))
 
         #Create a starting group
         self.create_new_group()
@@ -398,18 +388,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         if offline_mode:
             worker_get_spectrum = Worker(self.get_fake_spectrum)
         else:
-            worker_get_spectrum = Worker(lambda: osa.get_trace)
+            worker_get_spectrum = Worker(self.get_spectrum)
         worker_get_spectrum.signals.result.connect(self.plotSpectrum)
         self.threadpool.start(worker_get_spectrum)
 
-
     @Slot()
-    def plotSpectrum(self, spectrum: dict):
-        """Plots the spectrum and adds it to the list of spectra"""
+    def get_spectrum(self):
         current_group = self.model.root_item.child(self.model.root_item.child_count()-1)
         if current_group.child_count() == 0:
-            #Update the parameters of the OSA
-            #Update the metadata of the group
+            #Update the parameters of the OSA and the metadata of the group
             start = self.startWavlengthDoubleSpinBox.value()
             stop = self.stopWavelengthDoubleSpinBox.value()
             current_group.metadata = {
@@ -418,10 +405,21 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 'resolution': self.resoltuionNmDoubleSpinBox.value(),
                 'ref_level': self.referenceLevelDoubleSpinBox.value(),
                 'sensitivity': self.sensitivityComboBox.currentText(),
-                'trace_points': int(self.PointsNmspinBox.value()*(stop - start)),
+                'trace_points': int(self.PointsNmspinBox.value()*(stop - start) + 1),
             }
-            osa.update_params(current_group.metadata)
-            
+            self.andoOsa.update_params(current_group.metadata)
+
+        #Get the spectrum
+        spectrum = self.andoOsa.get_trace()
+        return spectrum
+
+
+
+    @Slot()
+    def plotSpectrum(self, spectrum: dict):
+        """Plots the spectrum and adds it to the list of spectra"""
+
+        current_group = self.model.root_item.child(self.model.root_item.child_count()-1)            
         #Get the previous color from the list or start with the first one
         if self.previous_color is None:
             color = colors[0]
@@ -447,7 +445,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             power_array.to_netcdf(f'./temp/{datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S")}.nc')
         
         plot = self.plotWidget.plot(wavelength, power, name = name, pen = pen)
-
         #Add the trace to the model
         current_group_index = self.model.root_item.child_count()-1
         #Create a tree item for the trace
@@ -483,7 +480,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     @Slot()
     def saveChecked(self):
-
 
         #Get the checked groups and save each group as a separate file
         checked_groups = [group for group in self.model.root_item.get_childs() if group.checked == Qt.CheckState.Checked]
@@ -603,4 +599,4 @@ if __name__ == "__main__":
 
     window = MainWindow()
     window.show()
-    app.exec()
+    app.exec()  

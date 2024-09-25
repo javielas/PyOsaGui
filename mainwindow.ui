@@ -77,33 +77,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QComboBox" name="sensitivityComboBox">
-        <item>
-         <property name="text">
-          <string>Hold</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Auto</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>High 1</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>High 2</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>High 3</string>
-         </property>
-        </item>
-       </widget>
+       <widget class="QComboBox" name="sensitivityComboBox"/>
       </item>
       <item>
        <widget class="QLabel" name="referenceLevelLabel">
