@@ -338,12 +338,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         
 
         if not offline_mode:
-            self.andoOsa = osa.AndoOSA()
-            self.startWavlengthDoubleSpinBox.setRange(self.andoOsa.get_wavlength_range()[0], self.andoOsa.get_wavlength_range()[1])
-            self.stopWavelengthDoubleSpinBox.setRange(self.andoOsa.get_wavlength_range()[0], self.andoOsa.get_wavlength_range()[1])
-            self.resoltuionNmDoubleSpinBox.setRange(self.andoOsa.get_resolution_range()[0], self.andoOsa.get_resolution_range()[1])
-            self.referenceLevelDoubleSpinBox.setRange(self.andoOsa.get_ref_level_range()[0], self.andoOsa.get_ref_level_range()[1])
-            self.sensitivityComboBox.addItems(list(self.andoOsa.sens_dict.keys()))
+            # Connect to the corresponding device
+            self.osa_device = osa.AndoOSA()
+            self.startWavlengthDoubleSpinBox.setRange(self.osa_device.get_wavlength_range()[0], self.osa_device.get_wavlength_range()[1])
+            self.stopWavelengthDoubleSpinBox.setRange(self.osa_device.get_wavlength_range()[0], self.osa_device.get_wavlength_range()[1])
+            self.resoltuionNmDoubleSpinBox.setRange(self.osa_device.get_resolution_range()[0], self.osa_device.get_resolution_range()[1])
+            self.referenceLevelDoubleSpinBox.setRange(self.osa_device.get_ref_level_range()[0], self.osa_device.get_ref_level_range()[1])
+            self.sensitivityComboBox.addItems(list(self.osa_device.sens_dict.keys()))
 
         #Create a starting group
         self.create_new_group()
@@ -407,10 +408,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 'sensitivity': self.sensitivityComboBox.currentText(),
                 'trace_points': int(self.PointsNmspinBox.value()*(stop - start) + 1),
             }
-            self.andoOsa.update_params(current_group.metadata)
+            self.osa_device.update_params(current_group.metadata)
 
         #Get the spectrum
-        spectrum = self.andoOsa.get_trace()
+        spectrum = self.osa_device.get_trace()
         return spectrum
 
 
@@ -476,6 +477,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 self.treeView.clearSelection()
         else:
             QtWidgets.QMessageBox.warning(self, "No trace selected", "Please select a trace to delete")
+
 
 
     @Slot()
@@ -599,4 +601,4 @@ if __name__ == "__main__":
 
     window = MainWindow()
     window.show()
-    app.exec()  
+    app.exec()
