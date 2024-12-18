@@ -8,19 +8,42 @@ import numpy as np
 import time, datetime
 import xarray as xr
 from pint import UnitRegistry
-import ando_driver as osa
+import Pyro4
 
 
-from MainWindow import Ui_MainWindow
+
+from mainwindow_agilent_ui import Ui_MainWindow
 
 ureg = UnitRegistry(autoconvert_offset_to_baseunit=True)
 Q_ = ureg.Quantity
 
-offline_mode = True
+offline_mode = False
 save_every_sweep = False
 
+if not offline_mode:
 
-#Matplotlib default set of colors
+    # Connect to the factory
+    factory_uri = "PYRO:lab.device_factory@192.168.10.100:9091"
+    device_factory = Pyro4.Proxy(factory_uri)
+
+    # Request device creation
+    device_type = "AgilentOSA"
+    device_name = "OSA0"
+    device_uri = device_factory.create_device(device_type, device_name)
+
+    print(f"Created device '{device_name}' of type '{device_type}' at URI: {device_uri}")
+
+    # Interact with the created device
+    osa_device = Pyro4.Proxy(device_uri)
+    print(osa_device.get_id())  # Should now work
+
+"""
+    # Connect to the corresponding device
+    uri = "PYRO:lab.Agilent_osa@192.168.10.100:9091"  # Use the fixed port
+    osa_device = Pyro4.Proxy(uri)                       
+"""
+
+#Matplotlib default set of colors           
 colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2',
  '#7f7f7f', '#bcbd22', '#17becf']
 
@@ -334,17 +357,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         #Initialize values for comparison of parameters between sweep calls
         self.inputs = {'start': self.startWavlengthDoubleSpinBox, 'stop': self.stopWavelengthDoubleSpinBox, 
                        'resolution': self.resoltuionNmDoubleSpinBox, 'ref_level':self.referenceLevelDoubleSpinBox, 
-                       'sensitivity': self.sensitivityComboBox, 'trace_points': self.PointsNmspinBox}
+                       'sensitivity': self.sensitivityDoubleSpinBox, 'trace_points': self.PointsNmspinBox}
         
 
         if not offline_mode:
-            # Connect to the corresponding device
-            self.osa_device = osa.AndoOSA()
-            self.startWavlengthDoubleSpinBox.setRange(self.osa_device.get_wavlength_range()[0], self.osa_device.get_wavlength_range()[1])
-            self.stopWavelengthDoubleSpinBox.setRange(self.osa_device.get_wavlength_range()[0], self.osa_device.get_wavlength_range()[1])
-            self.resoltuionNmDoubleSpinBox.setRange(self.osa_device.get_resolution_range()[0], self.osa_device.get_resolution_range()[1])
-            self.referenceLevelDoubleSpinBox.setRange(self.osa_device.get_ref_level_range()[0], self.osa_device.get_ref_level_range()[1])
-            self.sensitivityComboBox.addItems(list(self.osa_device.sens_dict.keys()))
+            self.startWavlengthDoubleSpinBox.setRange(      osa_device.get_wavlength_range()[0], osa_device.get_wavlength_range()[1])
+            self.stopWavelengthDoubleSpinBox.setRange(osa_device.get_wavlength_range()[0], osa_device.get_wavlength_range()[1])
+            self.resoltuionNmDoubleSpinBox.setRange(osa_device.get_resolution_range()[0], osa_device.get_resolution_range()[1])
+            self.referenceLevelDoubleSpinBox.setRange(osa_device.get_ref_level_range()[0], osa_device.get_ref_level_range()[1])
+            self.sensitivityDoubleSpinBox.setRange(osa_device.get_sensitivities()[0],osa_device.get_sensitivities()[1])
 
         #Create a starting group
         self.create_new_group()
@@ -400,18 +421,31 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             #Update the parameters of the OSA and the metadata of the group
             start = self.startWavlengthDoubleSpinBox.value()
             stop = self.stopWavelengthDoubleSpinBox.value()
+            resolution = self.resoltuionNmDoubleSpinBox.value()
+            ref_level = self.referenceLevelDoubleSpinBox.value()
+            sensitivity = self.sensitivityDoubleSpinBox.value()
+            trace_points = int(self.PointsNmspinBox.value()*(stop - start) + 1)
+
+
+
             current_group.metadata = {
                 'start': start,
                 'stop': stop,
                 'resolution': self.resoltuionNmDoubleSpinBox.value(),
                 'ref_level': self.referenceLevelDoubleSpinBox.value(),
-                'sensitivity': self.sensitivityComboBox.currentText(),
+                'sensitivity': self.sensitivityDoubleSpinBox.value(),
                 'trace_points': int(self.PointsNmspinBox.value()*(stop - start) + 1),
             }
-            self.osa_device.update_params(current_group.metadata)
+            osa_device.set_start(start)
+            osa_device.set_stop(stop)
+            osa_device.set_resolution(resolution)
+            print(f'Trace points {trace_points}')
+            osa_device.set_trace_points(trace_points)
+            osa_device.sensitivity_mode(sensitivity)
+            osa_device.set_ref(ref_level)
 
-        #Get the spectrum
-        spectrum = self.osa_device.get_trace()
+        #Get the spectrum   
+        spectrum = osa_device.get_trace()
         return spectrum
 
 
@@ -432,15 +466,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         color= QtGui.QColor(color)
         #Get the color that's the next from the last one in the list
         pen = pg.mkPen(color= color)
-        wavelength = spectrum['wavelength'].to(ureg.nm).magnitude
-        power = spectrum['power'].to(ureg.dBm).magnitude
+        wavelength = spectrum['wavelength']                                         
+        power = spectrum['power']
         name = f'Trace {current_group.child_count()+1}'
         power_array = xr.DataArray(data = power ,
                                    coords = {'wavelength': wavelength},
-                                   attrs= {'units': f'{spectrum["power"].units:~}', 
+                                   attrs= {'units': f'{ureg.nm}', 
                                             'date': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")},
                                    name= name)
-        power_array['wavelength'].attrs['units'] = f'{spectrum["wavelength"].units:~}'
+        power_array['wavelength'].attrs['units'] = f'{ureg.dBm}'
 
         if save_every_sweep:
             power_array.to_netcdf(f'./temp/{datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S")}.nc')
@@ -453,8 +487,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         #self.model.layoutChanged.emit()
         self.model.add_child(current_group, new_item)
         self.treeView.expand(self.model.index(current_group_index, 0))
-
-        
+     
     @Slot()
     def deleteTrace(self):
         index = self.treeView.selectedIndexes()[0]
@@ -477,8 +510,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 self.treeView.clearSelection()
         else:
             QtWidgets.QMessageBox.warning(self, "No trace selected", "Please select a trace to delete")
-
-
 
     @Slot()
     def saveChecked(self):
@@ -534,7 +565,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         elif file_type == "CSV":
             self.save_to_csv(traces, notes, date)
-
 
     def save_to_csv(self, traces, notes, date):
         #Ask the user for the name of the file
