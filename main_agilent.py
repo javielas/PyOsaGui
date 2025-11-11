@@ -18,7 +18,7 @@ from mainwindow_agilent_ui import Ui_MainWindow
 ureg = UnitRegistry(autoconvert_offset_to_baseunit=True)
 Q_ = ureg.Quantity
 
-test_mode = True
+test_mode = False
 save_every_sweep = False
 remote_mode = False # True to use the OSA connected to RPi
 
@@ -468,7 +468,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             color = colors[0]
             self.previous_color = color
         else:
-            color = colors[colors.index(self.previous_color)+1]
+            color = colors[(colors.index(self.previous_color)+1)%len(colors)]
             self.previous_color = color
         
         color= QtGui.QColor(color)
