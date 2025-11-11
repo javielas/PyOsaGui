@@ -8,7 +8,8 @@ import numpy as np
 import time, datetime
 import xarray as xr
 from pint import UnitRegistry
-import Pyro4
+from agilent_OSA_driver import AgilentOSA
+#import Pyro4
 
 
 
@@ -17,25 +18,32 @@ from mainwindow_agilent_ui import Ui_MainWindow
 ureg = UnitRegistry(autoconvert_offset_to_baseunit=True)
 Q_ = ureg.Quantity
 
-offline_mode = False
+test_mode = True
 save_every_sweep = False
+remote_mode = False # True to use the OSA connected to RPi
 
-if not offline_mode:
+if not test_mode:
 
-    # Connect to the factory
-    factory_uri = "PYRO:lab.device_factory@192.168.10.100:9091"
-    device_factory = Pyro4.Proxy(factory_uri)
+    if remote_mode:
 
-    # Request device creation
-    device_type = "AgilentOSA"
-    device_name = "OSA0"
-    device_uri = device_factory.create_device(device_type, device_name)
+        # Connect to the factory
+        factory_uri = "PYRO:lab.device_factory@192.168.10.100:9091"
+        device_factory = Pyro4.Proxy(factory_uri)
 
-    print(f"Created device '{device_name}' of type '{device_type}' at URI: {device_uri}")
+        # Request device creation
+        device_type = "AgilentOSA"
+        device_name = "OSA0"
+        device_uri = device_factory.create_device(device_type, device_name)
 
-    # Interact with the created device
-    osa_device = Pyro4.Proxy(device_uri)
-    print(osa_device.get_id())  # Should now work
+        print(f"Created device '{device_name}' of type '{device_type}' at URI: {device_uri}")
+
+        # Interact with the created device
+        osa_device = Pyro4.Proxy(device_uri)
+        print(osa_device.get_id())  # Should now work
+    
+    else:
+        
+        osa_device = AgilentOSA()
 
 """
     # Connect to the corresponding device
@@ -360,7 +368,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                        'sensitivity': self.sensitivityDoubleSpinBox, 'trace_points': self.PointsNmspinBox}
         
 
-        if not offline_mode:
+        if not test_mode:
             self.startWavlengthDoubleSpinBox.setRange(      osa_device.get_wavlength_range()[0], osa_device.get_wavlength_range()[1])
             self.stopWavelengthDoubleSpinBox.setRange(osa_device.get_wavlength_range()[0], osa_device.get_wavlength_range()[1])
             self.resoltuionNmDoubleSpinBox.setRange(osa_device.get_resolution_range()[0], osa_device.get_resolution_range()[1])
@@ -407,7 +415,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             input_widget.setEnabled(False)
 
         #Create a worker for the spectrum acquisition
-        if offline_mode:
+        if test_mode:
             worker_get_spectrum = Worker(self.get_fake_spectrum)
         else:
             worker_get_spectrum = Worker(self.get_spectrum)
